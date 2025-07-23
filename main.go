@@ -15,7 +15,7 @@ import (
 
 func getRoot() error {
 	if os.Geteuid() != 0 {
-		fmt.Println("Required root access to install crates.")
+		fmt.Println("Required root access to install/uninstall crates.")
 		if runtime.GOOS == "windows" {
 			fmt.Println("Can't rerun with admin privileges on Windows, exiting...")
 		} else {
@@ -230,6 +230,10 @@ func main() {
 		crate.UnpackBin(prefix)
 		fmt.Println("Binary unpacked successfully at:", prefix)
 	case "pull", "Pull", "P", "p":
+		err := getRoot()
+		if err != nil {
+			log.Fatalf("Error getting root: %v", err)
+		}
 		if len(subCommand) == 0 {
 			log.Fatalln("Please provide a source URL to pull the crate.")
 		}
@@ -252,25 +256,24 @@ func main() {
 			log.Fatalf("Error unmarshalling crate: %v", err)
 		}
 		fmt.Println("Crate pulled successfully:", crate.ProjectName)
-		fmt.Println("Do you want to install or save the crate? (install/save)")
+		fmt.Print("Do you want to install or uninstall the crate? (install/uninstall): ")
 		var action string
 		_, err = fmt.Scanln(&action)
 		if err != nil {
 			log.Fatalf("Error reading action: %v", err)
 		}
 		switch action {
-		case "install":
+		case "install", "i":
 			err = crate.Install()
 			if err != nil {
 				log.Fatalf("Error installing pulled crate: %v", err)
 			}
-		case "save":
-			savePath := crate.ProjectName + ".json"
-			err = crate.Save(savePath)
+		case "uninstall", "u":
+			err = crate.Uninstall()
 			if err != nil {
 				log.Fatalf("Error saving pulled crate: %v", err)
 			}
-			fmt.Println("Crate saved successfully at:", savePath)
+			fmt.Println("Crate uninstalled successfully.")
 		}
 	default:
 		fmt.Println("Usage: go run main.go [command] [options]")
@@ -278,7 +281,7 @@ func main() {
 		fmt.Println("  build  |Build  |b|B             - Build a new crate")
 		fmt.Println("  install|Install|i|I  <filename> - Install a crate")
 		fmt.Println("  get-bin|Get-bin|g|G  <filename> - Unpack a crate binary to a specified prefix path")
-		fmt.Println("  pull   |Pull   |p|P             - Pull a crate from a source URL")
+		fmt.Println("  pull   |Pull   |p|P  <filename> - Pull a crate from a source URL")
 	}
 
 }
