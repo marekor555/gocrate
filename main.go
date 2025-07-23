@@ -10,26 +10,21 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"runtime"
 )
 
 func getRoot() error {
 	if os.Geteuid() != 0 {
 		fmt.Println("Required root access to install/uninstall crates.")
-		if runtime.GOOS == "windows" {
-			fmt.Println("Can't rerun with admin privileges on Windows, exiting...")
-		} else {
-			fmt.Println("Rerunning with sudo...")
-			cmd := exec.Command("sudo", os.Args...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Stdin = os.Stdin
-			err := cmd.Run()
-			if err != nil {
-				return fmt.Errorf("error rerunning with sudo: %v", err)
-			}
-			os.Exit(0)
+		fmt.Println("Rerunning with sudo...")
+		cmd := exec.Command("sudo", os.Args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("error rerunning with sudo: %v", err)
 		}
+		os.Exit(0)
 	}
 	return nil
 }
@@ -91,15 +86,10 @@ func (c Crate) UnpackBin(prefix string) {
 }
 
 func (c Crate) Install() error {
-	if runtime.GOOS == "windows" {
-		log.Fatalln("Installing on windows not available yet")
-	}
-	if runtime.GOOS == "linux" {
-		filePath := path.Join("/bin", c.BinaryName)
-		err := os.WriteFile(filePath, c.BinaryFile, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to write binary file: %w", err)
-		}
+	filePath := path.Join("/bin", c.BinaryName)
+	err := os.WriteFile(filePath, c.BinaryFile, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to write binary file: %w", err)
 	}
 	return nil
 }
